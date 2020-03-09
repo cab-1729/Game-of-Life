@@ -17,7 +17,7 @@ colors={
     'deep blue':(0,0,255),
     'cyan':(0,255,255),
     'dark cyan':(0,139,139),
-    'charteuse':(127,255,0),
+    'chartreuse':(127,255,0),
     'forest green':(34,139,34),
     'light green':(144,238,144),
     'yellow':(255,255,0),
