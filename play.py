@@ -174,9 +174,9 @@ def save():
 		else:
 			cur_state[cell.row][cell.column]='0'
 	with shelve.open(nf+'\\'+name) as game_save:
-		game_save['dead color']=dead_color
-		game_save['alive color']=alive_color
-		game_save['grid color']=grid_color
+		game_save['dead color']=str(dc.get())
+		game_save['alive color']=str(ac.get())
+		game_save['grid color']=str(lc.get())
 		game_save['state']=cur_state
 def load():
 	global plan,dead_color,alive_color,grid_color
@@ -190,9 +190,9 @@ def load():
 	if not os.path.exists(nf):
 		load_entry.insert(0,'not found name')
 	with shelve.open(nf+'\\'+name) as game_save:
-		dead_color=game_save['dead color']
-		alive_color=game_save['alive color']
-		grid_color=game_save['grid color']
+		dead_color=colors[game_save['dead color']]
+		alive_color=colors[game_save['alive color']]
+		grid_color=colors[game_save['grid color']]
 		plan=game_save['state']
 	reset()
 	plan=[['0' for _ in range(Cell.columns+1)] for __ in range(Cell.rows+1)]
