@@ -9,3 +9,4 @@ His interview on Numberphile : https://www.youtube.com/playlist?list=PLt5AfwLFPx
 His biography is : "Genius at play"
 
 Configurations of this game can be saved , they will be in the saved folder . They can be deleted from there but are not to be renamed.
+Warning: These configurations will not work on a screen of different size , so they are native to the computer they are saved in .
