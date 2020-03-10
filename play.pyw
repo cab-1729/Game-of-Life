@@ -5,7 +5,6 @@ from pyautogui import size
 import pygame
 import os
 import shelve
-from sys import exit
 colors={
     'white':(255,255,255),
     'alice blue':(240,248,255),
@@ -35,12 +34,18 @@ color_ops=list(colors.keys())
 dead_color=colors['white']
 alive_color=colors['black']
 grid_color=colors['grey']
-fps=50
+fps=10
 height,width=size()
 thicknesses=()
+size_each='__________ '
+#boolean communication
 show_grid=True
 living=False
+stop_rendering=False
+stepping=False
+#-----------------------------
 class Cell(pygame.sprite.Sprite):
+	sizes=(5,8,10,20,50,100)
 	gap=1
 	side=10
 	tbk=[]
@@ -63,7 +68,7 @@ class Cell(pygame.sprite.Sprite):
 	def __init__(self,arg1,arg2):
 		pygame.sprite.Sprite.__init__(self)
 		self.image=pygame.Surface((Cell.side,Cell.side))
-		self.alive=plan[arg1][arg2]=='1'
+		self.alive=False
 		self.image.fill(alive_color if self.alive else dead_color)
 		self.rect=self.image.get_rect()
 		self.row=arg1
@@ -101,7 +106,6 @@ class Cell(pygame.sprite.Sprite):
 		own_address=(self.row,self.column)
 		if own_address in self.neighbours:self.neighbours.remove(own_address)
 	def __repr__(self):return ('Alive' if self.alive else 'Dead'+' cell at '+str(self.row)+','+str(self.column))
-plan=[['0' for _ in range(Cell.columns+1)] for __ in range(Cell.rows+1)]
 #------------------------
 #functions
 def change_color_d(*args):
@@ -126,12 +130,94 @@ def change_grid():
 		grid_changer.configure(text='Hide grid')
 	else:
 		grid_changer.configure(text='Show grid')
+def increase_size():
+	pause()
+	global grid,stop_rendering
+	stop_rendering=True
+	former_state=[]
+	for i in range(Cell.rows+1):
+		t=[]
+		for j in range(Cell.columns+1):
+			if grid[i][j].alive:
+				t.append(1)
+			else:
+				t.append(0)
+		former_state.append(t)
+	Cell.side=Cell.sizes[Cell.sizes.index(Cell.side)+1]
+	Cell.rows=(height//(Cell.gap+Cell.side))+1
+	Cell.columns=(width//(Cell.gap+Cell.side))+1
+	# creation
+	for cell in Cell.all_cells:
+		cell.kill()
+		del cell
+	Cell.all_cells=[]
+	grid=[]
+	for r in range(Cell.rows+1):
+		t=[]
+		for c in range(Cell.columns+1):
+			temp=Cell(r, c)
+			t.append(temp)
+			all_sprites.add(temp)
+			if former_state[r][c]==1:
+				temp.be_born()
+		grid.append(t)
+	if Cell.side==Cell.sizes[-1]:
+		size_plus_button.configure(state='disabled')
+	elif Cell.side==Cell.sizes[1]:
+		size_minus_button.configure(state='active')
+	size_disp.configure(text=size_each*Cell.sizes.index(Cell.side))
+	stop_rendering=False
+def decrease_size():
+	pause()
+	global grid,stop_rendering
+	stop_rendering=True
+	former_state=[]
+	for i in range(Cell.rows+1):
+		t=[]
+		for j in range(Cell.columns+1):
+			if grid[i][j].alive:
+				t.append(1)
+			else:
+				t.append(0)
+		former_state.append(t)
+	Cell.side=Cell.sizes[Cell.sizes.index(Cell.side)-1]
+	Cell.rows=(height//(Cell.gap+Cell.side))+1
+	Cell.columns=(width//(Cell.gap+Cell.side))+1
+	#creation
+	for cell in Cell.all_cells:
+		cell.kill()
+		del cell
+	Cell.all_cells=[]
+	grid=[]
+	for r in range(Cell.rows+1):
+		t=[]
+		for c in range(Cell.columns+1):
+			temp=Cell(r,c)
+			t.append(temp)
+			all_sprites.add(temp)
+			try:
+				if former_state[r][c]==1:
+					temp.be_born()
+			except IndexError:
+				continue
+		grid.append(t)
+	if Cell.side==Cell.sizes[0]:
+		size_minus_button.configure(state='disabled')
+	elif Cell.side==Cell.sizes[-2]:
+		size_plus_button.configure(state='active')
+	size_disp.configure(text=size_each*Cell.sizes.index(Cell.side))
+	stop_rendering=False
+def step():
+	global stepping
+	stepping=True
 def pause():
-	global living,p_button
+	global living
+	step_button.configure(state='active')
 	p_button.configure(text='Play >')
 	living=False
 def play():
-	global living,p_button
+	global living
+	step_button.configure(state='disabled')
 	p_button.configure(text='Pause ||')
 	living=True
 def change_pause_stat():
@@ -144,8 +230,7 @@ def reset():
 	for cell in Cell.all_cells:
 		if cell.alive:
 			cell.die()
-def save():
-	cur_state=[['0' for _ in range(Cell.columns+1)] for __ in range(Cell.rows+1)]
+def save(*args):
 	pause()
 	name=str(save_entry.get())
 	if name.replace(' ','')=='':
@@ -157,18 +242,26 @@ def save():
 	if not os.path.exists(nf):
 		os.makedirs(nf)
 	pygame.image.save(screen,nf+'\\screen.png')
-	for cell in Cell.all_cells:
-		if cell.alive:
-			cur_state[cell.row][cell.column]='1'
-		else:
-			cur_state[cell.row][cell.column]='0'
+	cur_state=[]
+	for r in range(Cell.rows+1):
+		t=[]
+		for c in range(Cell.columns+1):
+			if grid[r][c].alive:
+				t.append(1)
+			else:
+				t.append(0)
+		cur_state.append(t)
 	with shelve.open(nf+'\\'+name) as game_save:
 		game_save['dead color']=str(dc.get())
 		game_save['alive color']=str(ac.get())
 		game_save['grid color']=str(lc.get())
 		game_save['state']=cur_state
-def load():
-	global plan,dead_color,alive_color,grid_color
+		game_save['size']=Cell.side
+		game_save['grid shown']=show_grid
+def load(*args):
+	pause()
+	global dead_color,alive_color,grid_color,show_grid,stop_rendering,grid
+	stop_rendering=True
 	name=str(load_entry.get())
 	if name.replace(' ','')=='':
 		load_entry.insert(0,'no name given')
@@ -179,17 +272,54 @@ def load():
 	if not os.path.exists(nf):
 		load_entry.insert(0,'not found name')
 	with shelve.open(nf+'\\'+name) as game_save:
+		c1=game_save['dead color']
+		c2=game_save['alive color']
+		c3=game_save['grid color']
 		dead_color=colors[game_save['dead color']]
 		alive_color=colors[game_save['alive color']]
 		grid_color=colors[game_save['grid color']]
 		plan=game_save['state']
-	reset()
-	plan=[['0' for _ in range(Cell.columns+1)] for __ in range(Cell.rows+1)]
+		show_grid=game_save['grid shown']
+		Cell.side=game_save['size']
+	dead_color=colors[c1];alive_color=colors[c2];grid_color=colors[c3]
+	#remove original
+	Cell.rows=(height//(Cell.gap+Cell.side))+1
+	Cell.columns=(width//(Cell.gap+Cell.side))+1
+	for cell in Cell.all_cells:
+		cell.kill()
+		del cell
+	Cell.all_cells=[]
+	#create new
+	grid=[]
+	for r in range(Cell.rows+1):
+		t=[]
+		for c in range(Cell.columns+1):
+			temp=Cell(r,c)
+			t.append(temp)
+			all_sprites.add(temp)
+			try:
+				if plan[r][c]==1:
+					temp.be_born()
+			except IndexError:
+				continue
+		grid.append(t)
+	#change interface
+	if show_grid:grid_changer.configure(text='Hide grid')
+	else:grid_changer.configure(text='Show grid')
+	size_disp.configure(text=size_each*Cell.sizes.index(Cell.side))
+	if Cell.side==Cell.sizes[-1]:size_plus_button.configure(state='disabled')
+	else:size_plus_button.configure(state='active')
+	if Cell.side==Cell.sizes[0]:size_minus_button.configure(state='disabled')
+	else:size_minus_button.configure(state='active')
+	dc.set(c1);ac.set(c2);lc.set(c3)
+	stop_rendering=False
+def go_down(*args):load_entry.focus()
+def go_up(*args):save_entry.focus()
 #-------------
 #threads
 def gui_thread():
 	control=Tk()
-	global dc,ac,lc,p_button,grid_changer,save_entry,load_entry
+	global dc,ac,lc,p_button,grid_changer,save_entry,load_entry,size_plus_button,size_minus_button,size_disp,step_button
 	dc,ac,lc=StringVar(),StringVar(),StringVar()
 	dc.set('white');ac.set('black');lc.set('grey')
 	control.title('Conway\'s Game of Life')
@@ -200,6 +330,8 @@ def gui_thread():
 	p_button.grid(row=r,columnspan=4);r+=1
 	grid_changer=Button(control,text='Hide grid',command=change_grid)
 	grid_changer.grid(row=r,columnspan=4);r+=1
+	step_button=Button(control,text='Next gen',command=step)
+	step_button.grid(row=r,columnspan=4);r+=1
 	Button(control,text='Reset',command=reset).grid(row=r,columnspan=4);r+=1
 	Label(control,text='Color : ').grid(row=r,column=0)
 	Label(control,text='Alive').grid(row=r,column=1)
@@ -210,16 +342,27 @@ def gui_thread():
 	OptionMenu(control,dc,*color_ops,command=change_color_d).grid(row=r,column=2)
 	OptionMenu(control,lc,*color_ops,command=change_color_l).grid(row=r,column=3)
 	r+=1
+	Label(control,text='Box size : ').grid(row=r,column=0)
+	size_plus_button=Button(control,text='+',command=increase_size)
+	size_plus_button.grid(row=r,column=2)
+	size_minus_button=Button(control,text='-',command=decrease_size)
+	size_minus_button.grid(row=r,column=3)
+	r+=1
+	size_disp=Label(control,text=size_each*Cell.sizes.index(Cell.side))
+	size_disp.grid(row=r,columnspan=4,sticky=W)
+	r+=1
 	save_entry=Entry(control)
 	save_entry.grid(row=r,column=0,columnspan=3)
 	Button(control,text='Save',command=save).grid(row=r,column=3)
+	save_entry.bind('<Return>',save);save_entry.bind('<Down>',go_down)
 	r+=1
 	load_entry=Entry(control)
 	load_entry.grid(row=r,column=0,columnspan=3)
 	Button(control,text='Load',command=load).grid(row=r,column=3)
+	load_entry.bind('<Return>',load);load_entry.bind('<Up>',go_up)
 	control.mainloop()
 def game_thread():
-	global screen,grid,living
+	global screen,grid,living,all_sprites,stepping
 	pygame.init()
 	screen=pygame.display.set_mode((0,0),pygame.RESIZABLE)
 	pygame.display.set_caption('Conway\'s Game of Life')
@@ -239,7 +382,6 @@ def game_thread():
 	while True:
 		#time
 		clock.tick(fps)
-		#input
 		#event
 		for event in pygame.event.get():
 			if event.type==pygame.QUIT:
@@ -251,22 +393,23 @@ def game_thread():
 				cell_clicked.be_born() if cell_clicked.alive else cell_clicked.die()
 		if b:break
 		#next generation
-		if living:
+		if living or stepping:
 			for cell in Cell.all_cells:
 				if cell.should_be_born():cell.tbb.append(cell)
 				elif cell.should_die():Cell.tbk.append(cell)
 			Cell.life_or_death()
-		#update
-		all_sprites.update()
-		#render
-		screen.fill(grid_color if show_grid else dead_color)
-		all_sprites.draw(screen)
-		#flip
-		pygame.display.flip()
+			if stepping:stepping=False
+		if not stop_rendering:
+			#update
+			all_sprites.update()
+			#render
+			screen.fill(grid_color if show_grid else dead_color)
+			all_sprites.draw(screen)
+			#flip
+			pygame.display.flip()
 #----------------------
 #run
 if __name__=='__main__':
 	life_game=Thread(target=game_thread)
 	life_game.start()
 	gui_thread()
-#-----------------------------
