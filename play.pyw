@@ -207,6 +207,7 @@ def decrease_size():
 		size_plus_button.configure(state='active')
 	size_disp.configure(text=size_each*Cell.sizes.index(Cell.side))
 	stop_rendering=False
+print(Cell.rows,Cell.columns)
 def step():
 	global stepping
 	stepping=True
@@ -242,20 +243,12 @@ def save(*args):
 	if not os.path.exists(nf):
 		os.makedirs(nf)
 	pygame.image.save(screen,nf+'\\screen.png')
-	cur_state=[]
-	for r in range(Cell.rows+1):
-		t=[]
-		for c in range(Cell.columns+1):
-			if grid[r][c].alive:
-				t.append(1)
-			else:
-				t.append(0)
-		cur_state.append(t)
+	alive_cells=[(i.row,i.column) for i in Cell.all_cells if i.alive]
 	with shelve.open(nf+'\\'+name) as game_save:
 		game_save['dead color']=str(dc.get())
 		game_save['alive color']=str(ac.get())
 		game_save['grid color']=str(lc.get())
-		game_save['state']=cur_state
+		game_save['living cells']=cur_state
 		game_save['size']=Cell.side
 		game_save['grid shown']=show_grid
 def load(*args):
@@ -278,7 +271,7 @@ def load(*args):
 		dead_color=colors[game_save['dead color']]
 		alive_color=colors[game_save['alive color']]
 		grid_color=colors[game_save['grid color']]
-		plan=game_save['state']
+		birth=game_save['living cells']
 		show_grid=game_save['grid shown']
 		Cell.side=game_save['size']
 	dead_color=colors[c1];alive_color=colors[c2];grid_color=colors[c3]
@@ -297,11 +290,9 @@ def load(*args):
 			temp=Cell(r,c)
 			t.append(temp)
 			all_sprites.add(temp)
-			try:
-				if plan[r][c]==1:
-					temp.be_born()
-			except IndexError:
-				continue
+			address=(r,c)
+			if address in birth:
+				temp.be_born()
 		grid.append(t)
 	#change interface
 	if show_grid:grid_changer.configure(text='Hide grid')
