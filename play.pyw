@@ -35,7 +35,7 @@ dead_color=colors['white']
 alive_color=colors['black']
 grid_color=colors['grey']
 fps=10
-height,width=size()
+width,height=size()
 thicknesses=()
 size_each='__________ '
 #boolean communication
