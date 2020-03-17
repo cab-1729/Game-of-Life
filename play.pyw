@@ -55,7 +55,7 @@ class Cell(pygame.sprite.Sprite):
 	all_cells=[]
 	@staticmethod
 	def elem_clicked(p):
-		y,x=p
+		x,y=p
 		r=(y//(Cell.side+Cell.gap))
 		c=(x//(Cell.side+Cell.gap))
 		return grid[r][c]
@@ -73,8 +73,8 @@ class Cell(pygame.sprite.Sprite):
 		self.rect=self.image.get_rect()
 		self.row=arg1
 		self.column=arg2
-		y=self.column*(Cell.gap+Cell.side)
-		x=self.row*(Cell.gap+Cell.side)
+		y=self.row*(Cell.gap+Cell.side)
+		x=self.column*(Cell.gap+Cell.side)
 		self.rect.x,self.rect.y=x,y
 		self.neighbours=[]
 		self.get_neighbours()
@@ -207,7 +207,6 @@ def decrease_size():
 		size_plus_button.configure(state='active')
 	size_disp.configure(text=size_each*Cell.sizes.index(Cell.side))
 	stop_rendering=False
-print(Cell.rows,Cell.columns)
 def step():
 	global stepping
 	stepping=True
