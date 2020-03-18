@@ -247,7 +247,7 @@ def save(*args):
 		game_save['dead color']=str(dc.get())
 		game_save['alive color']=str(ac.get())
 		game_save['grid color']=str(lc.get())
-		game_save['living cells']=cur_state
+		game_save['living cells']=alive_cells
 		game_save['size']=Cell.side
 		game_save['grid shown']=show_grid
 def load(*args):
