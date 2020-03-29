@@ -5,30 +5,7 @@ from pyautogui import size
 import pygame
 import os
 import shelve
-colors={
-    'white':(255,255,255),
-    'alice blue':(240,248,255),
-    'grey':(169,169,169),
-    'black':(0,0,0),
-    'medium orchid':(186,85,211),
-    'deep pink':(255,20,147),
-    'dark orchid':(153,50,204),
-    'deep blue':(0,0,255),
-    'cyan':(0,255,255),
-    'dark cyan':(0,139,139),
-    'chartreuse':(127,255,0),
-    'forest green':(34,139,34),
-    'light green':(144,238,144),
-    'yellow':(255,255,0),
-    'khaki':(240,230,140),
-    'gold':(255,215,0),
-    'orange':(255,165,0),
-    'light salmon':(255,160,122),
-    'tomato':(255,99,71),
-    'red':(255,0,0),
-    'dark red':(139,0,0),
-    'fire brick':(178,34,34),
-}
+from color import colors
 #common env
 color_ops=list(colors.keys())
 dead_color=colors['white']
