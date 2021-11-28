@@ -3,8 +3,9 @@ from threading import Thread
 from itertools import product
 from pyautogui import size
 import pygame
-import os
-import shelve
+from os import makedirs
+from os.path import join,exists
+from shelve import open as shelve_open
 from color import colors
 #common env
 color_ops=list(colors.keys())
@@ -61,7 +62,7 @@ class Cell(pygame.sprite.Sprite):
 		for n in self.neighbours:
 			if grid[n[0]][n[1]].alive:
 				alive_neighbours+=1
-		if alive_neighbours<2 or alive_neighbours>3:#death by isolation and overpopulation
+		if alive_neighbours<2 or alive_neighbours>3:#death by isolation or overpopulation
 			return True
 	def should_be_born(self):
 		alive_neighbours = 0
@@ -214,13 +215,12 @@ def save(*args):
 		save_entry.insert(0,'no name given')
 		return
 	save_entry.delete(0,END)
-	rf=os.getcwd()
-	nf=rf+'\\Saved\\'+name
-	if not os.path.exists(nf):
-		os.makedirs(nf)
+	nf=join('Saved',name)
+	if not exists(nf):
+		makedirs(nf)
 	pygame.image.save(screen,nf+'\\screen.png')
 	alive_cells=[(i.row,i.column) for i in Cell.all_cells if i.alive]
-	with shelve.open(nf+'\\'+name) as game_save:
+	with shelve_open(nf+'\\'+name) as game_save:
 		game_save['dead color']=str(dc.get())
 		game_save['alive color']=str(ac.get())
 		game_save['grid color']=str(lc.get())
@@ -236,11 +236,10 @@ def load(*args):
 		load_entry.insert(0,'no name given')
 		return
 	load_entry.delete(0,END)
-	rf=os.getcwd()
-	nf=rf+'\\Saved\\'+name
-	if not os.path.exists(nf):
+	nf=join('Saved',name)
+	if not exists(nf):
 		load_entry.insert(0,'not found name')
-	with shelve.open(nf+'\\'+name) as game_save:
+	with shelve_open(nf+'\\'+name) as game_save:
 		c1=game_save['dead color']
 		c2=game_save['alive color']
 		c3=game_save['grid color']
@@ -290,7 +289,6 @@ def gui_thread():
 	dc,ac,lc=StringVar(),StringVar(),StringVar()
 	dc.set('white');ac.set('black');lc.set('grey')
 	control.title('Conway\'s Game of Life')
-	control.iconbitmap('Deps\\My face.ico')
 	control.resizable(False,False)
 	r=0
 	p_button=Button(control,text='Play >',command=change_pause_stat)
